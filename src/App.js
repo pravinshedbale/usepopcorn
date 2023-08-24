@@ -65,32 +65,40 @@ export default function App() {
     const [error, setError] = useState("");
     const [query, setQuery] = useState("");
     const [selectedId, setSelectedId] = useState(null);
-    const tempQuery = "man";
     const handleSelectMovie = (id) => {
         setSelectedId((selectedId) => (id === selectedId ? null : id));
     };
     const handleCloseMovie = () => {
         setSelectedId(null);
     };
+    const handleAddWatchd = (movie) => {
+        setWatched((watched) => [...watched, movie]);
+    };
+    const handleDeleteWatched = (id) => {
+        setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
+    };
     useEffect(() => {
-        const fetchMovies = async () => {
-            try {
-                setIsLoading(true);
-                setError("");
-                const res = await fetch(
-                    `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-                );
-                if (!res.ok) throw new Error("Error in fetching movie list");
-                const data = await res.json();
-                if (data.Response === "False")
-                    throw new Error("Movie not found");
-                setMovies(data.Search);
-            } catch (error) {
-                console.error(error);
-                setError(error.message);
-            } finally {
-                setIsLoading(false);
-            }
+        const fetchMovies = () => {
+            setTimeout(async () => {
+                try {
+                    setIsLoading(true);
+                    setError("");
+                    const res = await fetch(
+                        `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+                    );
+                    if (!res.ok)
+                        throw new Error("Error in fetching movie list");
+                    const data = await res.json();
+                    if (data.Response === "False")
+                        throw new Error("Movie not found");
+                    setMovies(data.Search);
+                } catch (error) {
+                    console.error(error);
+                    setError(error.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            }, 900);
         };
         if (query.length < 3) {
             setMovies([]);
@@ -98,7 +106,9 @@ export default function App() {
             return;
         }
         fetchMovies();
+        return () => clearTimeout(fetchMovies);
     }, [query]);
+
     return (
         <>
             <Navbar>
@@ -122,11 +132,16 @@ export default function App() {
                         <MovieDetails
                             selectedId={selectedId}
                             onCloseMovie={handleCloseMovie}
+                            onAddWatched={handleAddWatchd}
+                            watched={watched}
                         />
                     ) : (
                         <>
                             <WatchedSummary watched={watched} />
-                            <WatchedMoviesList watched={watched} />
+                            <WatchedMoviesList
+                                watched={watched}
+                                onDeleteWatched={handleDeleteWatched}
+                            />
                         </>
                     )}
                 </Box>
